@@ -1,5 +1,5 @@
 -- ============================================================================
--- Production Database Schema: Weather Forecast Application
+-- PostgreSQL Database Schema: Weather Forecast Application
 -- Compatible with PostgreSQL 14+ / CockroachDB / SQLite 3
 -- ============================================================================
 
@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS cities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
     state VARCHAR(100),
-    country VARCHAR(50) NOT NULL DEFAULT 'India',
-    country_code VARCHAR(2) NOT NULL DEFAULT 'IN',
+    country VARCHAR(100) NOT NULL,
+    country_code VARCHAR(2),
     latitude DECIMAL(9, 6) NOT NULL,
     longitude DECIMAL(9, 6) NOT NULL,
     osm_place_id BIGINT UNIQUE,

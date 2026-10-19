@@ -121,7 +121,7 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* Production Telemetry Banner */}
+      {/* Telemetry Banner */}
       <section className="bg-[var(--color-linen-panel)] border border-[var(--color-linen-border)] rounded-2xl p-6 flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <ShieldCheck size={24} className="text-[var(--color-sage)]" />

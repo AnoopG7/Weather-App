@@ -30,7 +30,7 @@ const nominatim = axios.create({
 app.use(cors());
 app.use(express.json());
 
-// Production rate limiting: 120 requests per minute
+// Request rate limiting: 120 requests per minute
 app.use(
   rateLimit({
     windowMs: 60 * 1000,

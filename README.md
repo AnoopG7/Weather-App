@@ -1,6 +1,6 @@
-# Weather Forecast Web Application (Production-Grade)
+# Weather Forecast Web Application
 
-A production-grade, multi-page weather intelligence and forecasting platform for cities worldwide built with **React 19 + TypeScript + React Router** (frontend) and **Node.js + Express + TypeScript** (backend).
+A multi-page weather intelligence and forecasting platform for cities worldwide built with **React 19 + TypeScript + React Router** (frontend) and **Node.js + Express + TypeScript** (backend).
 
 ---
 
@@ -10,8 +10,8 @@ A production-grade, multi-page weather intelligence and forecasting platform for
 | :--- | :--- |
 | **Frontend** | React 19, TypeScript, Vite 6, React Router v7, Tailwind CSS v4, Lucide Icons |
 | **Backend** | Node.js, Express, TypeScript, tsx, Axios, json2csv, express-rate-limit |
-| **Caching & Architecture** | In-memory TTL Cache Service (24h Geocoding, 10m Weather), Cache-Aside pattern |
-| **Database Design** | Dual SQL (PostgreSQL DDL) & NoSQL (MongoDB / Prisma) schema definitions |
+| **Caching & Architecture** | In-memory TTL cache (`Map`) with 24h geocoding and 10m weather entries |
+| **Database Design** | PostgreSQL schema documented for future persistence; not connected at runtime |
 | **Data Providers** | OpenStreetMap (Nominatim) for geocoding, OpenWeatherMap for forecasts |
 
 ---
@@ -28,15 +28,13 @@ A production-grade, multi-page weather intelligence and forecasting platform for
 
 ---
 
-## Database Architecture & Design Rationale
+## Persistence Status
 
-Comprehensive database documentation is available in [DATABASE_ARCHITECTURE.md](./DATABASE_ARCHITECTURE.md), [backend/src/db/schema.sql](./backend/src/db/schema.sql), and [backend/prisma/schema.prisma](./backend/prisma/schema.prisma).
+The current application does not connect to an external database. Weather responses and geocoding results are cached in an in-memory `Map`, so the cache is cleared whenever the backend restarts.
 
-### Summary of SQL vs. NoSQL Decision:
-- **Production Choice: PostgreSQL (Relational + JSONB) + Redis Cache**
-  - **Relational Structure**: Geographic hierarchies (Country → State → District → City) require strict foreign key constraints and uniqueness checks to prevent duplicate city records.
-  - **JSONB Flexibility**: 40-slot 3-hour forecasts are stored natively as indexed `JSONB` documents, avoiding 40 relational row inserts per search.
-  - **In-Memory Cache (Cache-Aside)**: Nominatim enforces a 1 req/sec rate limit. Geocoding coordinates are cached for 24 hours and weather responses for 10 minutes, cutting subsequent query latency from ~500ms down to **< 2ms** (with a verified 65%+ cache hit rate).
+PostgreSQL is the planned persistence option if durable storage, search history, and export logs are added later. The SQL design is an architecture artifact, not an active dependency of the running server.
+
+See [DATABASE_ARCHITECTURE.md](./DATABASE_ARCHITECTURE.md) and [backend/src/db/schema.sql](./backend/src/db/schema.sql) for the PostgreSQL design.
 
 ---
 
@@ -111,7 +109,7 @@ Open **http://localhost:5173** in your browser.
 
 ```
 Weather-Forecast/
-├── DATABASE_ARCHITECTURE.md    # SQL vs NoSQL trade-offs & architecture rationale
+├── DATABASE_ARCHITECTURE.md    # PostgreSQL architecture and integration plan
 ├── package.json                # Root concurrent dev runner
 ├── .gitignore                  # Gitignore rules
 ├── README.md                   # Complete documentation
@@ -120,11 +118,9 @@ Weather-Forecast/
 │   │   ├── services/
 │   │   │   └── cacheService.ts # In-memory TTL caching with hit/miss telemetry
 │   │   ├── db/
-│   │   │   └── schema.sql      # Production PostgreSQL DDL schema
+│   │   │   └── schema.sql      # PostgreSQL DDL schema
 │   │   ├── server.ts           # Express server, geocoding & OWM integration
 │   │   └── types.ts            # TypeScript interfaces
-│   ├── prisma/
-│   │   └── schema.prisma       # Prisma ORM schema definition
 │   ├── .env                    # Environment variables (API key)
 │   ├── .gitignore              # Backend gitignore
 │   ├── package.json            # Backend scripts & dependencies
@@ -132,7 +128,7 @@ Weather-Forecast/
 └── frontend/                   # React 19 + TypeScript + React Router Frontend
     ├── src/
     │   ├── pages/
-    │   │   ├── HomePage.tsx            # Landing page with metros live overview
+    │   │   ├── HomePage.tsx            # Landing page with global city overview
     │   │   ├── CityWeatherPage.tsx     # City telemetry, timeline, 5-day outlook
     │   │   ├── ComparePage.tsx         # Side-by-side city comparator
     │   │   ├── ExportPage.tsx          # Data dictionary & CSV download hub
@@ -148,16 +144,14 @@ Weather-Forecast/
     │   │   │   ├── ForecastGrid.tsx    # 5-day predictive cards
     │   │   │   ├── ExportCard.tsx      # In-page CSV export module
     │   │   │   └── MetroOverviewCard.tsx # Live metro cards
-    │   │   └── common/
-    │   │       ├── SearchBar.tsx       # Search with quick city chips
-    │   │       └── ToastContainer.tsx  # Toast alerts
+    │   │   └── SearchBar.tsx           # Search with quick city chips
     │   ├── context/
     │   │   └── FavoritesContext.tsx    # LocalStorage bookmarks state
     │   ├── lib/
     │   │   ├── api.ts                  # Axios client (fetch, compare, export)
     │   │   └── utils.ts                # Date formatting, validation, grouping
     │   ├── types.ts                    # Frontend TypeScript interfaces
-    │   ├── App.tsx                     # React Router routes definition
+    │   ├── AppRouter.tsx               # React Router routes definition
     │   ├── index.css                   # Linen design system & Tailwind CSS
     │   └── main.tsx                    # React DOM entry
     ├── index.html                      # HTML document & Google Fonts
@@ -169,10 +163,10 @@ Weather-Forecast/
 
 ---
 
-## Production Verification
+## Verification
 
 - **Frontend Compilation**: `npx tsc -b` passes with 0 errors.
-- **Frontend Bundle**: Vite production build completes in ~1.2s.
+- **Frontend Bundle**: Vite build completes in ~1.2s.
 - **Backend Compilation**: `tsc` passes with 0 errors.
 - **Routing**: Client-side history navigation with deep-linking (`/city/Mumbai`, `/compare`, `/export`).
-- **Telemetry & Quota Protection**: Verified 65%+ in-memory cache hit rate for upstream APIs.
+- **Telemetry & Quota Protection**: Cache hit/miss statistics are exposed through `/api/health`.

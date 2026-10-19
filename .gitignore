@@ -6,6 +6,7 @@ frontend/node_modules/
 # Environment variables & secrets
 .env
 .env.*
+!.env.example
 backend/.env
 frontend/.env
 *.env
@@ -15,6 +16,7 @@ dist/
 build/
 backend/dist/
 frontend/dist/
+*.tsbuildinfo
 
 # Logs
 *.log
